@@ -19,7 +19,7 @@ function MapView() {
 
   /* ---------------- FETCH STATIONS FROM BACKEND ---------------- */
   useEffect(() => {
-    fetch("http://127.0.0.1:8000/cpcb/stations")
+    fetch("http://127.0.0.1:8000/api/stations")
       .then((res) => res.json())
       .then((data) => {
         console.log("STATIONS FROM BACKEND:", data);

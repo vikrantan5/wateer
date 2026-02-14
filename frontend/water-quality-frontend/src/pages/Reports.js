@@ -1,13 +1,21 @@
 import { useEffect, useState } from "react";
 
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "http://localhost:8001";
+
 function Reports() {
   const [reports, setReports] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const fetchReports = () => {
-    fetch("http://127.0.0.1:8000/reports")
-      .then((res) => res.json())
-      .then((data) => setReports(data))
-      .catch((err) => console.error(err));
+  const fetchReports = async () => {
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/reports`);
+      const data = await response.json();
+      setReports(data);
+    } catch (err) {
+      console.error("Error fetching reports:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -15,46 +23,83 @@ function Reports() {
   }, []);
 
   const updateStatus = async (id, status) => {
-    const response = await fetch(
-      `http://127.0.0.1:8000/reports/${id}?status=${status}`,
-      {
-        method: "PUT",
-      }
-    );
+    try {
+      const response = await fetch(
+        `${BACKEND_URL}/api/reports/${id}?status=${status}`,
+        {
+          method: "PUT",
+        }
+      );
 
-    if (response.ok) {
-      fetchReports(); // reload reports
-    } else {
-      alert("Failed to update status");
+      if (response.ok) {
+        fetchReports(); // reload reports
+      } else {
+        alert("Failed to update status");
+      }
+    } catch (error) {
+      alert("Network error. Please try again.");
     }
   };
 
   return (
-    <div>
-      <h2>View Reports (Authority)</h2>
+    <div className="reports-container">
+      <h2>Water Quality Reports</h2>
 
-      {reports.length === 0 ? (
+      {loading ? (
+        <p>Loading reports...</p>
+      ) : reports.length === 0 ? (
         <p>No reports found</p>
       ) : (
-        reports.map((report) => (
-          <div key={report.id} style={{ border: "1px solid black", padding: "10px", marginBottom: "10px" }}>
-            <h4>{report.title}</h4>
-            <p>{report.description}</p>
-            <p><b>Location:</b> {report.location}</p>
-            <p><b>Status:</b> {report.status}</p>
+        <div className="reports-list">
+          {reports.map((report) => (
+            <div key={report.id} className="report-card" style={{ 
+              border: "1px solid #ddd", 
+              padding: "15px", 
+              marginBottom: "15px",
+              borderRadius: "8px",
+              backgroundColor: "#fff"
+            }}>
+              <h4>{report.title}</h4>
+              <p>{report.description}</p>
+              <p><b>Status:</b> <span style={{
+                color: report.status === 'approved' ? 'green' : report.status === 'rejected' ? 'red' : 'orange',
+                textTransform: 'capitalize'
+              }}>{report.status}</span></p>
 
-            {report.status === "pending" && (
-              <>
-                <button onClick={() => updateStatus(report.id, "approved")}>
-                  Verify
-                </button>{" "}
-                <button onClick={() => updateStatus(report.id, "rejected")}>
-                  Reject
-                </button>
-              </>
-            )}
-          </div>
-        ))
+              {report.status === "pending" && (
+                <div style={{marginTop: '10px'}}>
+                  <button 
+                    onClick={() => updateStatus(report.id, "approved")}
+                    style={{
+                      backgroundColor: '#4CAF50',
+                      color: 'white',
+                      padding: '8px 16px',
+                      marginRight: '10px',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Approve
+                  </button>
+                  <button 
+                    onClick={() => updateStatus(report.id, "rejected")}
+                    style={{
+                      backgroundColor: '#f44336',
+                      color: 'white',
+                      padding: '8px 16px',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Reject
+                  </button>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );
